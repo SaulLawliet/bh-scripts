@@ -1,6 +1,7 @@
-# name: "雪球基金"
-# cron: "1,11 19,20,21 * * *"
-
+"""
+name: 雪球基金
+cron: 0 1,11 19,20,21 * * *
+"""
 
 import requests
 from fake_useragent import UserAgent
