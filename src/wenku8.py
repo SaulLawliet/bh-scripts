@@ -18,7 +18,7 @@ def main():
         print("未检测到环境变量, 跳过!")
         return
 
-    session = build_requests_session()
+    session = build_requests_session(mobileUA=True)
 
     for novel in novels:
         resp = session.get(f"https://www.wenku8.net/modules/article/reader.php?aid={novel.get('id')}")
