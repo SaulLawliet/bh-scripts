@@ -43,7 +43,7 @@ def notify_and_save(env_key, data, title, content):
         if resp:
             print(f"通知响应: {resp}")
             if json.loads(resp).get("data", {}).get("success", False):
-                baihu.update_env(id=ENV.get("id"), name=env_key, value=json.dumps(data))
+                baihu.update_env(id=ENV.get("id"), name=env_key, value=json.dumps(data, ensure_ascii=False))
                 print("通知成功, 已更新数据")
             else:
                 print("通知失败, 不更新数据")
