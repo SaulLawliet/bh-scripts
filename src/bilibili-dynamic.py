@@ -55,7 +55,7 @@ def main():
         content += f"\n{author}: {title} (https:{url})"
 
     if content:
-        notify_and_save(ENV_KEY, config, NAME, f"{NAME}\n\n{content}")
+        notify_and_save(ENV_KEY, config, NAME, f"{NAME}\n{content}")
     else:
         print("无新动态, 不通知")
 

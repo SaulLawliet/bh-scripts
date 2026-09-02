@@ -33,7 +33,7 @@ def main():
         if last_chapter != novel.get("last_chapter"):
             print(f"小说 {title} 有更新, 最新章节: {last_chapter}")
             novel["last_chapter"] = last_chapter
-            notify_and_save(ENV_KEY, novels, NAME, f"{title}\n更新啦: {last_chapter}")
+            notify_and_save(ENV_KEY, novels, NAME, f"{title}\n\n更新啦: {last_chapter}")
         else:
             print(f"小说 {title} 无更新, 最新章节: {last_chapter}")
 
