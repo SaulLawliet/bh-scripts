@@ -3,16 +3,11 @@ name: "雪球基金"
 cron: "0 1,11 19,20,21 * * *"
 """
 
-import requests
-from fake_useragent import UserAgent
+from utils import build_requests_session, get_data, notify_and_save
 
-from utils import get_data, notify_and_save
-
+NAME = "雪球基金"
 ENV_KEY = "DANJUAN_FUNDS"
 MOCK_CONFIG = '[{"code": "050025", "principal": 10000, "share": 2500, "last_update": "2026-01-01"}]'
-
-session = requests.Session()
-session.headers.update({"User-Agent": UserAgent().random})
 
 
 def main():
@@ -24,6 +19,7 @@ def main():
     for fund in funds:
         print(fund)
 
+        session = build_requests_session()
         resp = session.get(f"https://danjuanfunds.com/djapi/fund/nav/history/{fund.get('code')}?page=1&size=3")
         if resp.status_code != 200:
             print(f"基金 {fund.get('code')}, 请求失败, 状态码: {resp.status_code}")
@@ -46,7 +42,7 @@ def main():
 
                     content += f"\n{item.get('date')}: {now:.2f} ({profit:.2f} / {profit_margin:.2f}%)"
 
-                notify_and_save(ENV_KEY, funds, "雪球基金", content)
+                notify_and_save(ENV_KEY, funds, NAME, content)
 
 
 if __name__ == "__main__":
