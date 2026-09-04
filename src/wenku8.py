@@ -16,6 +16,7 @@ def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
     session = build_requests_session(mobileUA=True)
+    session.headers.update({"referer": "https://www.wenku8.net/"})
 
     for novel in ctx.data.get("novels"):
         print(novel)
