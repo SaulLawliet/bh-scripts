@@ -11,7 +11,7 @@ from common import TaskContext, build_requests_session
 
 NAME = "B站动态"
 ENV_KEY = "BILIBILI_DYNAMIC"
-MOCK_CONFIG = '{"cookie": "", "last_ts": 0}'
+MOCK_CONFIG = '{"cookie": "__BILIBILI_COOKIE__", "last_ts": 0}'
 
 
 def main():
@@ -48,7 +48,6 @@ def main():
             print(f"已通知过的时间戳, {title}, ts: {ts}")
             continue
 
-        print(f"新动态, {author}: {title}")
         content += f"\n{author}: {title} (https:{url})"
 
     if content:

@@ -9,7 +9,7 @@ from common import TaskContext, build_requests_session
 
 NAME = "Trakt"
 ENV_KEY = "TRAKT"
-MOCK_CONFIG = '{"api_key": "", "access_token": "", "progress_list": {}}'
+MOCK_CONFIG = '{"api_key": "__TRAKT_API_KEY__", "access_token": "__TRAKT_ACCESS_TOKEN__", "progress_list": {}}'
 
 
 def main():
@@ -29,7 +29,10 @@ def main():
     )
     if resp.status_code != 200:
         print(f"请求失败, 状态码: {resp.status_code}")
-        ctx.notify(f"{NAME}请求失败, 状态码: {resp.status_code}, 请检查 api_key 和 access_token 是否正确")
+        if resp.status_code == 401:
+            ctx.notify("Trakt请求失败, token 可能过期, 请重新授权")
+        else:
+            ctx.notify(f"{NAME}请求失败, 状态码: {resp.status_code}, 请检查 api_key 和 access_token 是否正确")
         return
 
     if ctx.data.get("progress_list") is None:

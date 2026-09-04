@@ -13,10 +13,11 @@ MOCK_CONFIG = '{"funds": [{"code": "050025", "principal": 10000, "share": 2500, 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
+    session = build_requests_session()
+
     for fund in ctx.data.get("funds"):
         print(fund)
 
-        session = build_requests_session()
         resp = session.get(f"https://danjuanfunds.com/djapi/fund/nav/history/{fund.get('code')}?page=1&size=3")
         if resp.status_code != 200:
             print(f"基金 {fund.get('code')}, 请求失败, 状态码: {resp.status_code}")

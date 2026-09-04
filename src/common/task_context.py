@@ -1,5 +1,8 @@
 import json
+import os
 import sys
+
+from dotenv import load_dotenv
 
 
 class TaskContext:
@@ -17,8 +20,16 @@ class TaskContext:
             self.env = baihu.get_env(self.env_key)
             data = json.loads(self.env.get("value")) if self.env else None
         except ImportError:
-            print("\n💡[提示]未检测到白虎面板环境, 自动启用本地 Mock 数据...\n")
+            print("\n💡[提示]未检测到白虎面板环境, 自动启用本地 Mock / .env 数据...\n")
+
             data = json.loads(mock_config) if mock_config else None
+
+            if isinstance(data, dict):
+                load_dotenv()
+                # 暂时只读第一层的key，后续可能需要支持深层递归
+                for key, val in data.items():
+                    if isinstance(val, str) and val.startswith("__") and val.endswith("__") and len(val) > 4:
+                        data[key] = os.getenv(val[2:-2], "")
 
         if not data:
             print("未检测到环境变量, 跳过!")
