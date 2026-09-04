@@ -3,20 +3,17 @@ name: "雪球基金"
 cron: "0 1,11 19,20,21 * * *"
 """
 
-from common.utils import build_requests_session, get_data, notify_and_save
+from common import TaskContext, build_requests_session
 
-NAME = "雪球基金"
 ENV_KEY = "DANJUAN_FUNDS"
-MOCK_CONFIG = '[{"code": "050025", "principal": 10000, "share": 2500, "last_update": "2026-01-01"}]'
+NAME = "雪球基金"
+MOCK_CONFIG = '{"funds": [{"code": "050025", "principal": 10000, "share": 2500, "last_update": "2026-01-01"}]}'
 
 
 def main():
-    funds = get_data(ENV_KEY, MOCK_CONFIG)
-    if not funds:
-        print("未检测到环境变量, 跳过!")
-        return
+    ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    for fund in funds:
+    for fund in ctx.data.get("funds"):
         print(fund)
 
         session = build_requests_session()
@@ -42,7 +39,7 @@ def main():
 
                     content += f"\n{item.get('date')}: {now:.2f} ({profit:.2f} / {profit_margin:.2f}%)"
 
-                notify_and_save(ENV_KEY, funds, NAME, content)
+                ctx.notify_and_save(content)
 
 
 if __name__ == "__main__":

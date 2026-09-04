@@ -5,7 +5,7 @@ cron: "0 0 0 * * *"
 用浏览器抓包, 找到下面URL的请求头中的 api_key 和 access_token, 填入环境变量中即可
 """
 
-from common.utils import build_requests_session, get_data, notify, notify_and_save
+from common import TaskContext, build_requests_session
 
 NAME = "Trakt"
 ENV_KEY = "TRAKT"
@@ -13,8 +13,8 @@ MOCK_CONFIG = '{"api_key": "", "access_token": "", "progress_list": {}}'
 
 
 def main():
-    config = get_data(ENV_KEY, MOCK_CONFIG)
-    if not config:
+    ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
+    if not ctx.data:
         print("未检测到环境变量, 跳过!")
         return
 
@@ -22,19 +22,21 @@ def main():
     session.headers.update(
         {
             "trakt-api-version": "2",
-            "trakt-api-key": config.get("api_key"),
-            "authorization": f"Bearer {config.get('access_token')}",
+            "trakt-api-key": ctx.data.get("api_key"),
+            "authorization": f"Bearer {ctx.data.get('access_token')}",
         }
     )
 
-    resp = session.get("https://apiz.trakt.tv/sync/progress/up_next_nitro?page=1&limit=100&intent=continue&sort_how=desc")
+    resp = session.get(
+        "https://apiz.trakt.tv/sync/progress/up_next_nitro?page=1&limit=100&intent=continue&sort_how=desc"
+    )
     if resp.status_code != 200:
         print(f"请求失败, 状态码: {resp.status_code}")
-        notify(NAME, f"{NAME}请求失败, 状态码: {resp.status_code}, 请检查 api_key 和 access_token 是否正确")
+        ctx.notify(f"{NAME}请求失败, 状态码: {resp.status_code}, 请检查 api_key 和 access_token 是否正确")
         return
 
-    if config.get("progress_list") is None:
-        config["progress_list"] = {}
+    if ctx.data.get("progress_list") is None:
+        ctx.data["progress_list"] = {}
 
     content = ""
     for show in resp.json():
@@ -48,17 +50,17 @@ def main():
             first_aired = next_episode.get("first_aired")
 
             show_id = str(show.get("show_id"))
-            if config.get("progress_list", {}).get(show_id, {}).get("current") != season_episode:
+            if ctx.data.get("progress_list", {}).get(show_id, {}).get("current") != season_episode:
                 content += f"\n\n{show_title}\n{season_episode} - {title}\n{first_aired}"
 
-                config["progress_list"][show_id] = {
+                ctx.data["progress_list"][show_id] = {
                     "current": season_episode,
                     "title": show_title,
                 }
             else:
                 print(f"{show_title} {season_episode} 已通知过, 跳过")
     if content:
-        notify_and_save(ENV_KEY, config, NAME, f"{NAME}{content}")
+        ctx.notify_and_save(f"{NAME}{content}")
     else:
         print("无新影集, 不通知")
 
