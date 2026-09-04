@@ -20,3 +20,4 @@
 - [雪球基金](src/danjuan_funds.py)：每日净值更新、持有收益与收益率计算提醒
 - [Trakt](src/trakt.py)：剧集/新番进度更新提醒
 - [轻小说文库](src/wenku8.py)：轻小说最新章节更新提醒
+- [爱丽丝书屋](src/alicesw.py)：小说最新章节更新提醒

@@ -1,6 +1,6 @@
 """
 name: "Trakt"
-cron: "0 0 0 * * *"
+cron: "0 1 0 * * *"
 
 用浏览器抓包, 找到下面URL的请求头中的 api_key 和 access_token, 填入环境变量中即可
 """

@@ -1,6 +1,6 @@
 """
 name: "轻小说文库"
-cron: "0 0 0 * * *"
+cron: "0 1 0 * * *"
 """
 
 from bs4 import BeautifulSoup
