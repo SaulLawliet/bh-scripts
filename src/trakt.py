@@ -5,7 +5,7 @@ cron: "0 1 0 * * *"
 用浏览器抓包, 找到下面URL的请求头中的 api_key 和 access_token, 填入环境变量中即可
 """
 
-from common import TaskContext, build_requests_session
+from common import Session, TaskContext
 
 NAME = "Trakt"
 ENV_KEY = "TRAKT"
@@ -15,7 +15,7 @@ MOCK_CONFIG = '{"api_key": "__TRAKT_API_KEY__", "access_token": "__TRAKT_ACCESS_
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = build_requests_session()
+    session = Session()
     session.headers.update(
         {
             "trakt-api-version": "2",

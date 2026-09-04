@@ -5,17 +5,17 @@ cron: "0 1 0 * * *"
 
 from bs4 import BeautifulSoup
 
-from common import TaskContext, build_requests_session
+from common import Session, TaskContext
 
 NAME = "爱丽丝书屋"
 ENV_KEY = "ALICESW"
-MOCK_CONFIG = '{"novels": [{"id": 32020, "last_chapter": ""}]}'
+MOCK_CONFIG = '{"proxy": true, "novels": [{"id": 32020, "last_chapter": ""}]}'
 
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = build_requests_session()
+    session = Session(proxy=ctx.data.get("proxy", False))
 
     for novel in ctx.data.get("novels", []):
         novel_id = novel.get("id")

@@ -3,7 +3,7 @@ name: "雪球基金"
 cron: "0 1,11 19,20,21 * * *"
 """
 
-from common import TaskContext, build_requests_session
+from common import Session, TaskContext
 
 ENV_KEY = "DANJUAN_FUNDS"
 NAME = "雪球基金"
@@ -13,7 +13,7 @@ MOCK_CONFIG = '{"funds": [{"code": "050025", "principal": 10000, "share": 2500, 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = build_requests_session()
+    session = Session()
 
     for fund in ctx.data.get("funds"):
         print(fund)

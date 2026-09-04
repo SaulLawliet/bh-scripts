@@ -7,7 +7,7 @@ A: https://github.com/DIYgod/RSSHub/issues/12207#issuecomment-1636718921
    用隐身模式登陆获取 Cookie 后关闭浏览器, 即可有很长的有效期
 """
 
-from common import TaskContext, build_requests_session
+from common import Session, TaskContext
 
 NAME = "B站动态"
 ENV_KEY = "BILIBILI_DYNAMIC"
@@ -17,7 +17,7 @@ MOCK_CONFIG = '{"cookie": "__BILIBILI_COOKIE__", "last_ts": 0}'
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = build_requests_session(randomUA=False)
+    session = Session(randomUA=False)
     session.headers.update({"cookie": ctx.data.get("cookie")})
 
     resp = session.get("https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?type=video&platform=web&page=1")

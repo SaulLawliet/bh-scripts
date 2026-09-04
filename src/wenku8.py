@@ -5,7 +5,7 @@ cron: "0 1 0 * * *"
 
 from bs4 import BeautifulSoup
 
-from common import TaskContext, build_requests_session
+from common import Session, TaskContext
 
 NAME = "轻小说文库"
 ENV_KEY = "WENKU8"
@@ -15,7 +15,7 @@ MOCK_CONFIG = '{"novels": [{"id": 1861, "last_chapter": ""}]}'
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = build_requests_session(mobileUA=True)
+    session = Session(mobileUA=True)
     session.headers.update({"referer": "https://www.wenku8.net/"})
 
     for novel in ctx.data.get("novels"):
