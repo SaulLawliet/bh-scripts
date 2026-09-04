@@ -9,7 +9,7 @@ from utils import build_requests_session, get_data, notify, notify_and_save
 
 NAME = "Trakt"
 ENV_KEY = "TRAKT"
-MOCK_CONFIG = '{"api_key": "", "access_token": ""}'
+MOCK_CONFIG = '{"api_key": "", "access_token": "", "progress_list": {}}'
 
 
 def main():
@@ -27,9 +27,7 @@ def main():
         }
     )
 
-    resp = session.get(
-        "https://apiz.trakt.tv/sync/progress/up_next_nitro?page=1&limit=100&intent=continue&sort_how=desc"
-    )
+    resp = session.get("https://apiz.trakt.tv/sync/progress/up_next_nitro?page=1&limit=100&intent=continue&sort_how=desc")
     if resp.status_code != 200:
         print(f"请求失败, 状态码: {resp.status_code}")
         notify(NAME, f"{NAME}请求失败, 状态码: {resp.status_code}, 请检查 api_key 和 access_token 是否正确")

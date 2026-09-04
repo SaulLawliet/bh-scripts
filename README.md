@@ -15,7 +15,7 @@
 
 默认都是需要配置环境变量才能使用，如何配置请看具体的脚本。
 
-- [B站动态](src/bilibili-dynamic.py)：关注的up有更新
-- [雪球基金](src/danjuanfunds.py)：每日收益提醒
+- [B站动态](src/bilibili_dynamic.py)：关注的up有更新
+- [雪球基金](src/danjuan_funds.py)：每日收益提醒
 - [Trakt](src/trakt.py)：剧集有更新
 - [轻小说文库](src/wenku8.py)：小说有更新
