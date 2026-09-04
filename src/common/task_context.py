@@ -32,7 +32,7 @@ class TaskContext:
                         data[key] = os.getenv(val[2:-2], "")
 
         if not data:
-            print("未检测到环境变量, 跳过!")
+            print(f"{self.env_key} 未检测到环境变量, 跳过!")
             sys.exit(0)
 
         return data
