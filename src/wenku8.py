@@ -14,13 +14,11 @@ MOCK_CONFIG = '{"novels": [{"id": 1861, "last_chapter": ""}]}'
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
-    if not ctx.data:
-        print("未检测到环境变量, 跳过!")
-        return
 
     session = build_requests_session(mobileUA=True)
 
     for novel in ctx.data.get("novels"):
+        print(novel)
         resp = session.get(f"https://www.wenku8.net/modules/article/reader.php?aid={novel.get('id')}")
         if resp.status_code != 200:
             print(f"请求失败, 状态码: {resp.status_code}")

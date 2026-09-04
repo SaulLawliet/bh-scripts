@@ -1,4 +1,5 @@
 import json
+import sys
 
 
 class TaskContext:
@@ -14,10 +15,16 @@ class TaskContext:
             import baihu  # pyright: ignore[reportMissingImports]
 
             self.env = baihu.get_env(self.env_key)
-            return json.loads(self.env.get("value")) if self.env else None
+            data = json.loads(self.env.get("value")) if self.env else None
         except ImportError:
             print("\n💡[提示]未检测到白虎面板环境, 自动启用本地 Mock 数据...\n")
-            return json.loads(mock_config) if mock_config else None
+            data = json.loads(mock_config) if mock_config else None
+
+        if not data:
+            print("未检测到环境变量, 跳过!")
+            sys.exit(0)
+
+        return data
 
     def notify(self, content: str, title: str | None = None):
         print(f"\n准备通知:\n---\n{content}\n---")

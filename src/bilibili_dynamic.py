@@ -16,9 +16,6 @@ MOCK_CONFIG = '{"cookie": "", "last_ts": 0}'
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
-    if not ctx.data:
-        print("未检测到环境变量, 跳过!")
-        return
 
     session = build_requests_session(randomUA=False)
     session.headers.update({"cookie": ctx.data.get("cookie")})

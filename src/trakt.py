@@ -14,9 +14,6 @@ MOCK_CONFIG = '{"api_key": "", "access_token": "", "progress_list": {}}'
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
-    if not ctx.data:
-        print("未检测到环境变量, 跳过!")
-        return
 
     session = build_requests_session()
     session.headers.update(
