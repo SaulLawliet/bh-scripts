@@ -7,7 +7,7 @@ A: https://github.com/DIYgod/RSSHub/issues/12207#issuecomment-1636718921
    用隐身模式登陆获取 Cookie 后关闭浏览器, 即可有很长的有效期
 """
 
-from utils import build_requests_session, get_data, notify, notify_and_save
+from common.utils import build_requests_session, get_data, notify, notify_and_save
 
 NAME = "B站动态"
 ENV_KEY = "BILIBILI_DYNAMIC"

@@ -3,7 +3,7 @@ name: "雪球基金"
 cron: "0 1,11 19,20,21 * * *"
 """
 
-from utils import build_requests_session, get_data, notify_and_save
+from common.utils import build_requests_session, get_data, notify_and_save
 
 NAME = "雪球基金"
 ENV_KEY = "DANJUAN_FUNDS"

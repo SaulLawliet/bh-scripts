@@ -5,7 +5,7 @@ cron: "0 0 0 * * *"
 
 from bs4 import BeautifulSoup
 
-from utils import build_requests_session, get_data, notify_and_save
+from common.utils import build_requests_session, get_data, notify_and_save
 
 NAME = "轻小说文库"
 ENV_KEY = "WENKU8"

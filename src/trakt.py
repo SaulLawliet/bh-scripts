@@ -5,7 +5,7 @@ cron: "0 0 0 * * *"
 用浏览器抓包, 找到下面URL的请求头中的 api_key 和 access_token, 填入环境变量中即可
 """
 
-from utils import build_requests_session, get_data, notify, notify_and_save
+from common.utils import build_requests_session, get_data, notify, notify_and_save
 
 NAME = "Trakt"
 ENV_KEY = "TRAKT"
