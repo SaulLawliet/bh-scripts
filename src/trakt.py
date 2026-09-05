@@ -38,8 +38,20 @@ def main():
     if ctx.data.get("progress_list") is None:
         ctx.data["progress_list"] = {}
 
+    shows = resp.json()
+    current_show_ids = {str(show.get("show_id")) for show in shows if show.get("show_id") is not None}
+
+    # 如果 show 没有出现在进度列表里，那么从 progress_list 里移除
+    removed_shows = []
+    for show_id in list(ctx.data["progress_list"].keys()):
+        if str(show_id) not in current_show_ids:
+            show_info = ctx.data["progress_list"].pop(show_id)
+            title = show_info.get("title", show_id) if isinstance(show_info, dict) else show_id
+            print(f"影集 {title} (ID: {show_id}) 已不在待看列表中, 从 progress_list 移除")
+            removed_shows.append(show_id)
+
     content = ""
-    for show in resp.json():
+    for show in shows:
         show_title = show.get("show", {}).get("title")
         next_episode = show.get("progress", {}).get("next_episode", {})
 
@@ -61,6 +73,9 @@ def main():
                 print(f"{show_title} {season_episode} 已通知过, 跳过")
     if content:
         ctx.notify_and_save(f"{NAME}{content}")
+    elif removed_shows:
+        ctx.save()
+        print("无新影集, 不通知 (已同步移除已完结或删除的影集)")
     else:
         print("无新影集, 不通知")
 

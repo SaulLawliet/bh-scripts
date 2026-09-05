@@ -33,11 +33,11 @@ class TaskContext:
 
         if not data:
             print(f"{self.env_key} 未检测到环境变量, 跳过!")
-            sys.exit(0)
+            sys.exit(1)
 
         return data
 
-    def notify(self, content: str, title: str | None = None):
+    def notify(self, content: str, title: str | None = None) -> bool:
         print(f"\n准备通知:\n---\n{content}\n---")
         try:
             import baihu  # pyright: ignore[reportMissingImports]
@@ -47,27 +47,25 @@ class TaskContext:
                 print(f"通知响应: {resp}")
                 if json.loads(resp).get("data", {}).get("success", False):
                     print("通知成功")
-                    return
+                    return True
             print("通知失败")
         except ImportError:
             print("\n💡[提示]未检测到白虎面板环境, 不通知\n")
 
-    def notify_and_save(self, content: str, title: str | None = None):
-        print(f"\n准备通知:\n---\n{content}\n---")
-        try:
+        return False
+
+    def save(self):
+        if self.env:
             import baihu  # pyright: ignore[reportMissingImports]
 
-            resp = baihu.notify(title or self.name, content)
-            if resp:
-                print(f"通知响应: {resp}")
-                if json.loads(resp).get("data", {}).get("success", False):
-                    baihu.update_env(
-                        id=self.env.get("id"),
-                        name=self.env_key,
-                        value=json.dumps(self.data, ensure_ascii=False),
-                    )
-                    print("通知成功, 已更新数据")
-                    return
-            print("通知失败, 不更新数据")
-        except ImportError:
-            print("\n💡[提示]未检测到白虎面板环境, 不通知不更新\n")
+            baihu.update_env(
+                id=self.env.get("id"),
+                name=self.env_key,
+                value=json.dumps(self.data, ensure_ascii=False),
+            )
+            print("已更新数据")
+
+    def notify_and_save(self, content: str, title: str | None = None):
+        if self.notify(content, title):
+            self.save()
+

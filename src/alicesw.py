@@ -9,7 +9,7 @@ from common import Session, TaskContext
 
 NAME = "爱丽丝书屋"
 ENV_KEY = "ALICESW"
-MOCK_CONFIG = '{"proxy": true, "novels": [{"id": 32020, "last_chapter": ""}]}'
+MOCK_CONFIG = '{"proxy": false, "novels": [{"id": 32020, "last_chapter": ""}]}'
 
 
 def main():
