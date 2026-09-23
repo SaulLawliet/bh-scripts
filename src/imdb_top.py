@@ -1,5 +1,5 @@
 """
-name: "IMDb Top 10"
+name: "IMDb Top"
 cron: "0 1 0 * * *"
 """
 
@@ -9,19 +9,78 @@ from bs4 import BeautifulSoup
 
 from common import Session, TaskContext
 
-NAME = "IMDb Top 10"
+NAME = "IMDb Top"
 ENV_KEY = "IMDB_TOP10"
-MOCK_CONFIG = '{"last_top10": []}'
+MOCK_CONFIG = '{"cookie": "__IMDB_COOKIE__", "top": 10, "last_unwatched": []}'
 URL = "https://www.imdb.com/chart/top/?sort=release_date%2Cdesc&mode=simple&page=1"
 
 
-def fetch_top10(session: Session) -> list[dict]:
-    # 使用社交媒体抓取 UA 可避免被 AWS WAF 拦截 (202 质询)
-    headers = {
-        "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-    resp = session.get(URL, headers=headers)
+def format_movie(item: dict, prefix: str = "", suffix: str = "") -> str:
+    rating = f"⭐{item['rating']}" if item.get("rating") else ""
+    rank = f"(Top 250 #{item['rank_top250']})" if item.get("rank_top250") else ""
+    meta = f"{rating} {rank}".strip()
+    year = f" ({item['year']})" if item.get("year") else ""
+    indent = "  " if prefix.startswith(("+", "-")) else "   "
+    return (
+        f"{prefix}{item['title']}{year}\n{indent}{meta}{suffix}".rstrip()
+        if meta
+        else f"{prefix}{item['title']}{year}{suffix}"
+    )
+
+
+def fetch_watched_titles(session: Session, ctx: TaskContext) -> tuple[set[str], set[str]] | None:
+    try:
+        resp = session.get("https://www.imdb.com/list/watchhistory/", allow_redirects=False)
+        location = resp.headers.get("Location")
+
+        if resp.status_code in (401, 403) or not location or any(k in location.lower() for k in ["signin", "login"]):
+            print("Cookie 已失效，需重新登录")
+            ctx.notify("IMDb Cookie 已失效，请重新获取并更新 Cookie")
+            return None
+
+        target_url = f"https://www.imdb.com{location}" if location.startswith("/") else location
+        resp2 = session.get(target_url)
+        if resp2.status_code != 200 or "/signin" in resp2.url.lower():
+            print(f"获取观影历史失败, 状态码: {resp2.status_code}")
+            ctx.notify("IMDb Cookie 已失效，请重新获取并更新 Cookie")
+            return None
+
+        soup = BeautifulSoup(resp2.text, "html.parser")
+        script = soup.find("script", id="__NEXT_DATA__")
+        if not script or not script.string:
+            print("未在 IMDb 观影历史页面找到数据")
+            ctx.notify("未在 IMDb 观影历史页面找到数据，Cookie 可能已失效，请重新获取并更新 Cookie")
+            return None
+
+        data = json.loads(script.string)
+        edges = (
+            data.get("props", {})
+            .get("pageProps", {})
+            .get("mainColumnData", {})
+            .get("advancedTitleSearch", {})
+            .get("edges", [])
+        )
+
+        watched_ids = {
+            e.get("node", {}).get("title", {}).get("id") for e in edges if e.get("node", {}).get("title", {}).get("id")
+        }
+        watched_titles = {
+            e.get("node", {}).get("title", {}).get("titleText", {}).get("text")
+            for e in edges
+            if e.get("node", {}).get("title", {}).get("titleText", {}).get("text")
+        }
+        print(f"已获取用户标记为 watched 的电影数量: {len(watched_ids)}")
+        return watched_ids, watched_titles
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+        print(f"解析观影历史失败: {e}")
+        ctx.notify(f"获取 IMDb 观影历史异常: {e}，请检查 Cookie 是否有效")
+        return None
+
+
+def fetch_top_unwatched(
+    session: Session, top_limit: int, watched_ids: set[str], watched_titles: set[str]
+) -> list[dict]:
+    resp = session.get(URL)
     if resp.status_code != 200:
         print(f"请求失败, 状态码: {resp.status_code}")
         return []
@@ -41,104 +100,100 @@ def fetch_top10(session: Session) -> list[dict]:
         print(f"解析 __NEXT_DATA__ 失败: {e}")
         return []
 
-    top10 = []
-    for edge in chart_titles[:10]:
+    unwatched = []
+    for edge in chart_titles[:top_limit]:
         node = edge.get("node", {})
         title_id = node.get("id")
         title = node.get("titleText", {}).get("text", "")
-        year = node.get("releaseYear", {}).get("year")
-        rating = node.get("ratingsSummary", {}).get("aggregateRating")
-        rank_top250 = edge.get("currentRank")
-        release_date = node.get("releaseDate", {})
-        date_str = ""
-        if release_date and release_date.get("year"):
-            y = release_date.get("year")
-            m = release_date.get("month")
-            d = release_date.get("day")
-            if m and d:
-                date_str = f"{y}-{m:02d}-{d:02d}"
-            else:
-                date_str = str(y)
+        if title_id in watched_ids or title in watched_titles:
+            continue
 
-        top10.append(
+        unwatched.append(
             {
-                "id": title_id,
                 "title": title,
-                "year": year,
-                "rating": rating,
-                "rank_top250": rank_top250,
-                "release_date": date_str,
+                "year": node.get("releaseYear", {}).get("year"),
+                "rating": node.get("ratingsSummary", {}).get("aggregateRating"),
+                "rank_top250": edge.get("currentRank"),
             }
         )
 
-    return top10
+    return unwatched
 
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
     session = Session(randomUA=False)
+    session.headers.update(
+        {
+            "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.imdb.com/",
+        }
+    )
 
-    current_top10 = fetch_top10(session)
-    if not current_top10:
-        print("获取 IMDb 前10名数据为空，退出")
+    top_limit = int(ctx.data.get("top", 10))
+    cookie = ctx.data.get("cookie", "")
+    if cookie == "IMDB_COOKIE":
+        import os
+
+        cookie = os.getenv("IMDB_COOKIE", "")
+
+    if not cookie:
+        print("未配置 IMDb Cookie，中断运行")
+        ctx.notify("未配置 IMDb Cookie，无法排除已看电影，请先配置 Cookie")
         return
 
-    current_titles = [m.get("title", "") for m in current_top10]
-    last_top10 = ctx.data.get("last_top10", [])
-    if not isinstance(last_top10, list):
-        last_top10 = []
+    session.headers.update({"cookie": cookie})
+    watched_res = fetch_watched_titles(session, ctx)
+    if watched_res is None:
+        print("由于 Cookie 失效或获取观影历史失败，程序中断")
+        return
+    watched_ids, watched_titles = watched_res
+
+    current_unwatched = fetch_top_unwatched(session, top_limit, watched_ids, watched_titles)
+    current_titles = [m.get("title", "") for m in current_unwatched]
+    last_unwatched = ctx.data.get("last_unwatched", [])
 
     # 首次运行记录初始化数据
-    if not last_top10:
-        print("首次运行，初始化记录当前 IMDb Top 10 数据：")
-        for idx, item in enumerate(current_top10, 1):
-            rating_str = f"⭐{item['rating']}" if item.get("rating") else "暂无评分"
-            rank_str = f"(Top 250 #{item['rank_top250']})" if item.get("rank_top250") else ""
-            print(f"{idx}. {item['title']} ({item.get('year')}) {rating_str} {rank_str}")
+    if not last_unwatched and current_titles:
+        print(f"首次运行，初始化记录当前 IMDb Top {top_limit} 中的未读电影：")
+        lines = [format_movie(item, prefix=f"{i}. ") for i, item in enumerate(current_unwatched, 1)]
+        for line in lines:
+            print(line)
 
-        ctx.data["last_top10"] = current_titles
-        content = f"{NAME} (最新上映) 初始化成功，当前前10名：\n"
-        for idx, item in enumerate(current_top10, 1):
-            rating_str = f"⭐{item['rating']}" if item.get("rating") else "暂无评分"
-            rank_str = f"(Top 250 #{item['rank_top250']})" if item.get("rank_top250") else ""
-            content += f"\n{idx}. {item['title']} ({item.get('year')}) {rating_str} {rank_str}"
-
+        ctx.data["last_unwatched"] = current_titles
+        content = f"{NAME} (Top {top_limit} 未读电影) 初始化成功，共 {len(current_unwatched)} 部：\n\n" + "\n".join(
+            lines
+        )
         ctx.notify_and_save(content)
         return
 
     # 判断是否有变动（顺序或内容）
-    has_changed = last_top10 != current_titles
+    if last_unwatched != current_titles:
+        print(f"检测到 IMDb Top {top_limit} 未读电影发生变动！")
+        new_in_unwatched = [m for m in current_unwatched if m.get("title") not in last_unwatched]
+        out_of_unwatched = [title for title in last_unwatched if title not in current_titles]
 
-    if has_changed:
-        print("检测到 IMDb Top 10 发生变动！")
-        new_in_top10 = [m for m in current_top10 if m.get("title") not in last_top10]
-        out_of_top10 = [title for title in last_top10 if title not in current_titles]
+        content = f"{NAME} (Top {top_limit}) 未读电影发生变动！\n"
+        if new_in_unwatched:
+            content += "\n🎉 新增未读电影：\n" + "\n".join(format_movie(m, prefix="+ ") for m in new_in_unwatched)
 
-        content = f"{NAME} 榜单变动！\n"
-        if new_in_top10:
-            content += "\n🎉 新进前10名："
-            for m in new_in_top10:
-                rating_str = f"⭐{m['rating']}" if m.get("rating") else ""
-                rank_str = f"(Top 250 #{m['rank_top250']})" if m.get("rank_top250") else ""
-                content += f"\n+ {m['title']} ({m.get('year')}) {rating_str} {rank_str}"
+        if out_of_unwatched:
+            content += "\n\n🔻 移出未读电影：\n" + "\n".join(f"- {title}" for title in out_of_unwatched)
 
-        if out_of_top10:
-            content += "\n\n🔻 跌出前10名："
-            for title in out_of_top10:
-                content += f"\n- {title}"
+        if current_unwatched:
+            list_lines = [
+                format_movie(m, prefix=f"{i}. ", suffix=" [新]" if m.get("title") not in last_unwatched else "")
+                for i, m in enumerate(current_unwatched, 1)
+            ]
+            content += f"\n\n📋 当前 Top {top_limit} 未读电影 ({len(current_unwatched)} 部)：\n" + "\n".join(list_lines)
+        else:
+            content += f"\n\n📋 当前 Top {top_limit} 中已无未读电影！"
 
-        content += "\n\n📋 当前最新前10名："
-        for idx, m in enumerate(current_top10, 1):
-            rating_str = f"⭐{m['rating']}" if m.get("rating") else "暂无评分"
-            rank_str = f"#{m['rank_top250']}" if m.get("rank_top250") else ""
-            is_new = " [新上榜]" if m.get("title") not in last_top10 else ""
-            content += f"\n{idx}. {m['title']} ({m.get('year')}) {rating_str} ({rank_str}){is_new}"
-
-        ctx.data["last_top10"] = current_titles
-
+        ctx.data["last_unwatched"] = current_titles
         ctx.notify_and_save(content)
     else:
-        print("IMDb Top 10 无变化，不通知")
+        print(f"IMDb Top {top_limit} 未读电影无变化，不通知")
 
 
 if __name__ == "__main__":
