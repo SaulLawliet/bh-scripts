@@ -21,3 +21,4 @@
 - [Trakt](src/trakt.py)：剧集/新番进度更新提醒
 - [轻小说文库](src/wenku8.py)：轻小说最新章节更新提醒
 - [爱丽丝书屋](src/alicesw.py)：小说最新章节更新提醒
+- [IMDb Top 10](src/imdb_top.py)：监控 IMDb Top 250 最新上映电影前 10 名变动
