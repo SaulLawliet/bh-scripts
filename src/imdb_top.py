@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from common import Session, TaskContext
 
 NAME = "IMDb Top"
-ENV_KEY = "IMDB_TOP10"
+ENV_KEY = "IMDB_TOP"
 MOCK_CONFIG = '{"cookie": "__IMDB_COOKIE__", "top": 10, "last_unwatched": []}'
 URL = "https://www.imdb.com/chart/top/?sort=release_date%2Cdesc&mode=simple&page=1"
 
