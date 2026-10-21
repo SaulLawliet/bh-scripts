@@ -22,3 +22,4 @@
 - [轻小说文库](src/wenku8.py)：轻小说最新章节更新提醒
 - [爱丽丝书屋](src/alicesw.py)：小说最新章节更新提醒
 - [IMDb Top](src/imdb_top.py)：监控 IMDb Top 250 最新上映未读电影变动
+- [92号汽油价格](src/gas_price.py)：监控中国石化各省份 92号/E92号汽油价格及变动提醒
