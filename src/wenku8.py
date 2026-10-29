@@ -9,14 +9,21 @@ from common import Session, TaskContext
 
 NAME = "轻小说文库"
 ENV_KEY = "WENKU8"
-MOCK_CONFIG = '{"novels": [{"id": 1861, "last_chapter": ""}]}'
+MOCK_CONFIG = '{"proxy": false, "novels": [{"id": 1861, "last_chapter": ""}]}'
 
 
 def main():
     ctx = TaskContext(ENV_KEY, NAME, MOCK_CONFIG)
 
-    session = Session(mobileUA=True)
-    session.headers.update({"referer": "https://www.wenku8.net/"})
+    session = Session(randomUA=False, proxy=ctx.data.get("proxy", False))
+    session.headers.update(
+        {
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1",
+            "Referer": "https://www.wenku8.net/",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "zh-CN,zh-Hans;q=0.9",
+        }
+    )
 
     for novel in ctx.data.get("novels"):
         print(novel)
